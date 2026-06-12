@@ -11,7 +11,7 @@ st.set_page_config(page_title="Water Quality Dashboard", layout="wide")
 st.title("🛰️ Advanced Water Quality Analysis Dashboard")
 st.markdown("Monitoring Optically Active Parameters via Sentinel-2 & Landsat 8 Imagery")
 
-# --- 2. SECURE AUTHENTICATION (PRODUCTION READY) ---
+# --- 2. Auth
 @st.cache_resource
 def authenticate_gee():
     try:
@@ -19,9 +19,16 @@ def authenticate_gee():
         if "gcp_service_account" in st.secrets:
             import google.oauth2.service_account
             creds_dict = dict(st.secrets["gcp_service_account"])
-            credentials = google.oauth2.service_account.Credentials.from_service_account_info(creds_dict)
+            
+            # THE FIX: Explicitly request the Earth Engine Scope!
+            ee_scopes = ['https://www.googleapis.com/auth/earthengine']
+            credentials = google.oauth2.service_account.Credentials.from_service_account_info(
+                creds_dict, scopes=ee_scopes
+            )
+            
             ee.Initialize(credentials, project='turbidity-chlorophyll-test')
             return True
+            
         # Scenario B: We are on your local computer (Using credentials.json)
         else:
             SERVICE_ACCOUNT_FILE = 'credentials.json' 
@@ -29,15 +36,15 @@ def authenticate_gee():
             credentials = ee.ServiceAccountCredentials(SERVICE_ACCOUNT_EMAIL, SERVICE_ACCOUNT_FILE)
             ee.Initialize(credentials, project='turbidity-chlorophyll-test')
             return True
+            
     except Exception as e:
         st.error(f"❌ Authentication failed. Error: {e}")
         return False
 
 if not authenticate_gee():
     st.stop()
-
     
-# --- 3. SIDEBAR CONTROLS ---
+# --- 3. designs
 st.sidebar.header("📅 Select Timeline")
 start_date = st.sidebar.date_input("Start Date", datetime.date(2025, 1, 1))
 end_date = st.sidebar.date_input("End Date", datetime.date(2026, 1, 1))
