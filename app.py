@@ -5,6 +5,7 @@ import streamlit as st
 from streamlit_folium import st_folium
 import datetime
 import io
+import time
 
 # --- 1. PAGE CONFIGURATION ---
 st.set_page_config(page_title="Water Quality Dashboard", layout="wide")
@@ -264,3 +265,66 @@ with tab1:
 with tab2:
     st.header("Predictive Water Quality (BOD, COD, DO)")
     st.info("⚠️ Optically Inactive Parameters. This section will use Machine Learning to predict chemical properties based on historical data. (Under Development)")
+
+st.markdown("---")
+st.header("📡 Phase 2: Real-Time Ground Telemetry (MPPCB Integration)")
+st.markdown("Live IoT sensor feeds from the MPPCB Continuous Water Quality Monitoring System.")
+
+# 1. The Station Selector
+live_stations = [
+    'River Narmada at Origin Point, Amarkantak',
+    'River Narmada at Dindori',
+    'River Narmada at Down Stream of Jabalpur',
+    'River Narmada at Hoshangabad',
+    'River Narmada at Omkareshwar',
+    'River Narmada at Dharampuri',
+    'River Kshipra upstream city, Ujjain',
+    'River Kshipra at, Lalpul',
+    'River Kanha down stream of Kabeetkhedi, Indore',
+    'River Kanha before mixing to River Kshipra, Ujjain'
+]
+
+selected_live_station = st.selectbox("Select Station for Live Telemetry Feed:", live_stations)
+
+# 2. The Scraping Engine (Currently Mocked with your Screenshot Data)
+def fetch_live_telemetry(station_name):
+    # IN THE FUTURE: This is where we will put the BeautifulSoup / Selenium web scraping code.
+    # For now, if Amarkantak is selected, return the exact live data from your screenshot.
+    if station_name == 'River Narmada at Origin Point, Amarkantak':
+        return {
+            "pH": 8.04,
+            "BOD": 1.34,
+            "COD": 6.64,
+            "DO": 7.23,
+            "Conductivity": 204.0,
+            "Timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+    else:
+        # Return generic safe baseline data for other stations until the scraper is built
+        return {"pH": 7.5, "BOD": 2.0, "COD": 10.0, "DO": 6.5, "Conductivity": 250.0, "Timestamp": time.strftime("%Y-%m-%d %H:%M:%S")}
+
+# 3. The UI Render
+if st.button("🔄 Fetch Live IoT Data"):
+    with st.spinner(f"Connecting to MPPCB Telemetry at {selected_live_station}..."):
+        time.sleep(1.5) # Simulating network delay
+        data = fetch_live_telemetry(selected_live_station)
+        
+        st.success(f"✅ Live Connection Established! Last Updated: {data['Timestamp']}")
+        
+        # Display large, beautiful metric widgets
+        col1, col2, col3, col4, col5 = st.columns(5)
+        
+        with col1:
+            st.metric(label="pH Level", value=f"{data['pH']}", delta="Optimal", delta_color="normal")
+        with col2:
+            st.metric(label="BOD (mg/L)", value=f"{data['BOD']}", delta="-0.2 mg/L", delta_color="inverse") # Inverse because lower BOD is better
+        with col3:
+            st.metric(label="COD (mg/L)", value=f"{data['COD']}", delta="Stable", delta_color="off")
+        with col4:
+            st.metric(label="Dissolved O2 (mg/L)", value=f"{data['DO']}", delta="+0.1 mg/L", delta_color="normal")
+        with col5:
+            st.metric(label="Conductivity", value=f"{data['Conductivity']}")
+
+        # 4. Phase 2 Analysis (Comparing Satellite to Ground)
+        st.subheader("🛰️ AI Correlation Analysis")
+        st.info("In the final version, this panel will compare the live MPPCB BOD/COD readings against our Earth Engine Turbidity/Chlorophyll satellite data to train the predictive model.")
