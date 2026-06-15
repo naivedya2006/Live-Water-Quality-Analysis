@@ -264,7 +264,7 @@ with tab1:
 
 with tab2:
     st.header("Predictive Water Quality (BOD, COD, DO)")
-    st.info("⚠️ Optically Inactive Parameters. This section will use Machine Learning to predict chemical properties based on historical data. (Under Development)")
+    st.info("⚠️(Under Development)")
 
 st.markdown("---")
 st.header("📡 Phase 2: Real-Time Ground Telemetry (MPPCB Integration)")
