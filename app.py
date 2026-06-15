@@ -263,7 +263,7 @@ with tab1:
                     st.error(f"❌ An error occurred during GEE processing. This usually means the date range is too narrow and no imagery exists. Error details: {e}")
 
 with tab2:
-    st.header("Predictive Water Quality (BOD, COD, DO)")
+   
     st.info("⚠️(Under Development)")
 
 st.markdown("---")
