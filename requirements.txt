@@ -5,3 +5,6 @@ streamlit-folium
 pandas
 google-auth
 openpyxl
+plotly
+requests
+urllib3
