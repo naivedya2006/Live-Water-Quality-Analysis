@@ -63,49 +63,34 @@ def generate_dynamic_payload(station_name, site_id, start_dt, end_dt):
     json_str = json.dumps(payload_dict)
     return base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
 
-# --- REVISED FETCH FUNCTION WITH PERSISTENT SESSION ---
 @st.cache_data(ttl=300, show_spinner=False) 
 def fetch_live_data(station_name, site_id, start_dt_str, end_dt_str):
     url = "https://esc.mp.gov.in/glens/publicPortal/api/v2.0/industry-tabular"
-    
-    # Advanced Headers to simulate a real user interaction
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-        "Accept": "application/json, text/plain, */*",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Content-Type": "text/plain",
-        "Referer": "https://esc.mp.gov.in/",
         "Origin": "https://esc.mp.gov.in",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-origin"
+        "Referer": "https://esc.mp.gov.in/"
     }
     
     start_dt = datetime.datetime.strptime(start_dt_str, "%Y-%m-%d %H:%M:%S")
     end_dt = datetime.datetime.strptime(end_dt_str, "%Y-%m-%d %H:%M:%S")
+    
     payload = generate_dynamic_payload(station_name, site_id, start_dt, end_dt)
+    max_retries = 3
     
-    # Use a persistent session to maintain handshake
-    session = requests.Session()
-    
-    for attempt in range(3):
+    for attempt in range(max_retries):
         try:
-            # 1. Warm up the connection by visiting the homepage first
-            session.get("https://esc.mp.gov.in/", headers=headers, verify=False, timeout=10)
-            
-            # 2. Perform the POST request within the established session
-            response = session.post(url, headers=headers, data=payload, verify=False, timeout=(15, 30))
-            
-            if response.status_code == 200:
-                try:
-                    return json.loads(base64.b64decode(response.text))
-                except:
-                    return response.json()
+            response = requests.post(url, headers=headers, data=payload, verify=False, timeout=(15, 30))
+            try:
+                return json.loads(base64.b64decode(response.text))
+            except Exception:
+                return response.json()
+        except Exception:
+            if attempt < max_retries - 1:
+                time.sleep(3)
             else:
-                time.sleep(2) # Back off if server is busy
-        except Exception as e:
-            if attempt == 2: return {"error": f"Connection failed: {str(e)}"}
-            time.sleep(5)
-
-
+                return {"error": "timeout"}
 
 def process_data(api_data):
     if not api_data or 'parameterDetails' not in api_data:
